@@ -53,9 +53,12 @@ To run the app on your local machine:
    git clone https://github.com/kirstynloftus/Heart-Rate-Analysis.git
    cd Heart-Rate-Analysis/DoE_App
 2. Install the required R packages:
+
    install.packages(c("shiny", "ggplot2", "dplyr"))
 3. Run the app:
+
    shiny::runApp("DoE_app/app.R")
+   
 This will open the Shiny app in your web browser locally.
 
 ## Contributing
