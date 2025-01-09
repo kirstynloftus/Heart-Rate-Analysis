@@ -34,12 +34,29 @@ install.packages(c("rmarkdown", "knitr", "ggplot2", "dplyr", "DT", "MASS", "nort
 ## Usage
 To render the analysis, run the following command in R:  
 
-rmarkdown::render("DoE project fin.Rmd")  
+rmarkdown::render("DoE project.Rmd")  
 
 This will generate the HTML report with the full analysis.
 
 You can also view the interactive HTML version of the project here:  
 https://kirstynloftus.github.io/Heart-Rate-Analysis/DoE_project.html
+
+## Shiny App
+The interactive Shiny app allows users to explore heart rate changes by exercise type and incline rate. You can access it online or run it locally.
+
+### Online Access
+The Shiny app is available online at https://kirstynloftus.shinyapps.io/HeartRateAnalysisDashboard/
+### Running the App Locally
+To run the app on your local machine:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kirstynloftus/Heart-Rate-Analysis.git
+   cd Heart-Rate-Analysis/DoE_App
+2. Install the required R packages:
+   install.packages(c("shiny", "ggplot2", "dplyr"))
+3. Run the app:
+   shiny::runApp("DoE_app/app.R")
+This will open the Shiny app in your web browser locally.
 
 ## Contributing
 Feel free to use the data provided for your own research questions or purposes. If you'd like to contribute to the analysis, you're welcome to add on to it, suggest improvements, or submit issues with feedback. When contributing, please make sure to follow these guidelines:
