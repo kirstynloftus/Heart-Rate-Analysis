@@ -1,4 +1,4 @@
-# Heart-Rate-Analysis
+# Heart Rate Analysis
 Analyzing the relationship between heart rate, incline rate, and exercise type
 
 ## Description
@@ -6,19 +6,10 @@ This project analyzes the effect of exercise on heart rate by using statistical 
 
 ## Dependencies
 ### To reproduce the analysis from the .Rmd file, the following R packages are required:
--'rmarkdown'
--'knitr'
+'rmarkdown', 'knitr'
 
 ### To reproduce the analysis:
--'ggplot2'
--'dplyr'
--'DT'
--'MASS'
--'nortest'
--'fitdistrplus'
--'goftest'
--'caret'
--'survival'
+'ggplot2', 'dplyr', 'DT', 'MASS', 'nortest', 'fitdistrplus', 'goftest', 'caret', 'survival'
 
 ## Installation
 git clone 
