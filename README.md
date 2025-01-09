@@ -38,6 +38,9 @@ rmarkdown::render("DoE project fin.Rmd")
 
 This will generate the HTML report with the full analysis.
 
+You can also view the interactive HTML version of the project here:  
+https://kirstynloftus.github.io/Heart-Rate-Analysis/DoE_project.html
+
 ## Contributing
 Feel free to use the data provided for your own research questions or purposes. If you'd like to contribute to the analysis, you're welcome to add on to it, suggest improvements, or submit issues with feedback. When contributing, please make sure to follow these guidelines:
 
