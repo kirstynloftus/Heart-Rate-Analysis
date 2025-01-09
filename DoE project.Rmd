@@ -1,0 +1,385 @@
+---
+title: "Effects of Different Exercise Methods and Inclines on Heart Rate"
+author: "Kirstyn Loftus"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = TRUE)
+```
+
+## Introduction
+
+In this project, I will be exploring the effects of different exercise methods, namely, running vs. walking, along with incline rates, specifically, up vs. down stairs, on heart rate changes. Through analysis, the relationship between these three variables will be examined, and whether significant differences exist between these factors will also be tested.
+
+**The hypotheses that will be tested are:**
+
+1.  Running and walking do not have different effects on change in heart rate
+
+2.  There is no significant difference in changes in heart rate between going up and going down stairs.
+
+3.  There is no interaction between exercise type and incline rate in affecting changes in heart rate.
+
+## Analysis
+
+**Preparing the dataset for analysis:**
+
+```{r}
+HeartData <- read.csv("DoE_Project_Data.csv", stringsAsFactors = TRUE)
+HeartData <- HeartData[, -c(6:8)]
+colnames(HeartData) <- c('ExerciseType', 'InclineRate', 'StartRate', 'EndRate',
+                         'ChangeRate')
+```
+
+**Visualizing data via boxplots:**
+
+```{r}
+library(ggplot2)
+ggplot(HeartData, aes(x = interaction(ExerciseType, InclineRate), y = ChangeRate,
+       fill = interaction(ExerciseType, InclineRate))) +
+  geom_boxplot() +
+  labs(x = "Exercise Type and Incline Rate", y = "Change in Heart Rate (BPM)",
+       title = "Changes in Heart Rate by Exercise Type and Incline Rate") +
+  theme_minimal()
+```
+
+**Finding possible values of outcome variable (could help with determining distribution):**
+
+```{r}
+unique(HeartData$ChangeRate)
+```
+
+Since there is at least one observation with ChangeRate = 0, I want to ID them as this can impact my analysis.
+
+```{r}
+which(HeartData$ChangeRate == 0)
+```
+
+As there is only one observation with ChangeRate = 0, I suspect this value may be due to a measurement error. Given its rarity, it might be helpful to remove this observation from the dataset. However, this decision could influence the analysis, especially if the zero value carries meaningful information. To assess the impact of this exclusion, I will start by calculating and comparing the IQR and median for both the full dataset and the dataset with this observation removed.
+
+```{r}
+median_full <- median(HeartData$ChangeRate)
+iqr_full <- quantile(HeartData$ChangeRate, 0.75) - 
+  quantile(HeartData$ChangeRate, 0.25)
+
+HeartData_altered <- HeartData[HeartData$ChangeRate != 0, ]
+median_removed <-  median(HeartData_altered$ChangeRate)
+iqr_removed <- quantile(HeartData_altered$ChangeRate, 0.75) - 
+  quantile(HeartData_altered$ChangeRate, 0.25)
+
+cat("The median value of the full dataset is", median_full, 
+    "and the IQR of the full dataset is", iqr_full, "\n")
+cat("The median value of the altered dataset is", 
+    median_removed, "and the IQR of the altered dataset is", iqr_removed, "\n")
+```
+
+This comparison suggests that removing the observation with ChangeRate = 0 has minimal impact on the dataset, but I want to run more tests to confirm this. First, I need to check whether this data is normal, as that will affect the types of tests I can run.
+
+```{r}
+shapiro.test(HeartData$ChangeRate)
+```
+
+As the p-value is approximately 0, I cannot conclude the data is normally distributed. Thus, I will use a distribution-free test, the Wilcoxon Rank-Sum Test, which does not assume normality, to see if the datasets have significantly different distributions.
+
+```{r}
+wilcox.test(HeartData$ChangeRate, HeartData_altered$ChangeRate)
+```
+
+As the p-value, 0.912, is much larger than 0.05, I can conclude that removing the observation with ChangeRate = 0 does not significantly alter the distribution of the data. Thus, I will continue my analysis without this value.
+
+```{r}
+HeartData <- HeartData_altered
+```
+
+**Computing summary statistics of the data:**
+
+```{r}
+library(dplyr)
+
+descriptive_stats <- suppressWarnings( 
+  HeartData %>%
+  group_by(ExerciseType, InclineRate) %>%
+  summarise(
+  N = n(),
+  mean = round(mean(ChangeRate), 3),
+  stdev = round(sd(ChangeRate),3),
+  SE = round(stdev/sqrt(N),3),
+  min = min(ChangeRate),
+  q1 = quantile(ChangeRate, 0.25),
+  median = median(ChangeRate),
+  q3 = quantile(ChangeRate, 0.75),
+  max = max(ChangeRate),
+  .groups = "keep"
+  )
+)
+
+library(DT)
+datatable(descriptive_stats, caption = 
+            "Comparison of Change in Heart Rate Values (BPM) by Exercise Type 
+          and Incline Rate")
+```
+
+**Testing whether running vs walking significantly differ in impacting the change in heart rate:**
+
+```{r}
+kruskal.test(ChangeRate ~ ExerciseType, data = HeartData)
+```
+
+Given that the null hypothesis is that there ISN'T a difference in change in heart rate depending on exercise type, since the p-value is approximately 0, I can reject the null hypothesis and conclude that running and walking significantly differ in impacting the change in heart rate.
+
+**Testing whether going up or down significantly impacts change in heart rate:**
+
+```{r}
+kruskal.test(ChangeRate ~ InclineRate, data = HeartData)
+```
+
+Given that the null hypothesis is that there ISN'T a difference in change in heart rate depending on incline rate, since the p-value is approximately 0, I can reject the null hypothesis and conclude that going up and going down stairs significantly differ in impacting the change in heart rate.
+
+Thus, any models to be built should include both predictors.
+
+**Checking normality of outcome data:**
+
+```{r}
+normality_value <-shapiro.test(HeartData$ChangeRate)
+round(normality_value$p.value, 5)
+```
+
+Since the p-value for the Shapiro-Wilk test is approximately 0, which is less than 0.05, I cannot conclude this data is normal.
+
+**Visualizing data to get a better idea of structure:**
+
+```{r}
+hist(HeartData$ChangeRate)
+```
+
+Maybe a log-transformation will work?
+
+```{r}
+HeartData$LogChangeRate <- log(HeartData$ChangeRate)
+hist(HeartData$LogChangeRate)
+```
+
+Maybe a Box-Cox transformation?
+
+```{r}
+library(MASS)
+boxcox_result <- boxcox(lm(HeartData$ChangeRate ~ 1))
+
+boxcox_result$x[which.max(boxcox_result$y)]
+```
+
+This tells me my optimal $\lambda$ value (for this scenario) is 0.46. Using this to transform my data:
+
+```{r}
+HeartData$changerate_transformed <- (HeartData$ChangeRate^0.46 - 1) / 0.46
+```
+
+```{r}
+hist(HeartData$changerate_transformed)
+```
+
+```{r}
+shapiro.test(HeartData$changerate_transformed)
+```
+
+The histogram and Shapiro-Wilk test tell me the data is still not approximately normal. Since transformations have not been successful, I will use approaches that do not rely on normality to predict change in heart rate.
+
+Since the data appears to have heavy tails and contains many ties, I will test if it follows a Weibull distribution using the Anderson-Darling test:
+
+```{r}
+library(nortest)
+library(fitdistrplus)
+library(goftest)
+
+weibull_fit <- fitdist(HeartData$ChangeRate, "weibull")
+
+ad.test(HeartData$ChangeRate, "weibull", shape = weibull_fit$estimate[1], 
+        scale = weibull_fit$estimate[2])
+```
+
+As the p-value, 0.1915, is greater than 0.05, I fail to reject the null hypothesis and can conclude my data follows a Weibull distribution.
+
+**Modifying my dataset so only the crucial columns are included:**
+
+```{r}
+HeartData <- HeartData[,c("ExerciseType", "InclineRate", "ChangeRate")]
+```
+
+As there are two potential predictors, ExerciseType and InclineRate, the total number of possible regression models is $2^2$ = 4. The models would be as follows: a model with just ExerciseType, a model with just InclineRate, one with both predictors, and one with both predictors and their interaction. However, since it's been determined that both ExerciseType and InclineRate are significant in predicting changes in heart rate, I will only consider two models, one with both predictors, and one with both predictors and their interaction. 
+
+To evaluate model performance, I will use k-fold cross-validation, as the dataset is a bit too small (in my opinion, that is) to utilize a traditional test/train split. Here, I will use k = 7, since it divides 119 into 7 groups of 17 observations.
+
+To compare models, I will use RMSE and $R^2$. RMSE penalizes large errors, which is useful when outliers are particularly concerning and need to be minimized, and since this data relates to human health, outliers are indeed particularly concerning. $R^2$, on the other hand, details how much of the variance in the dependent variable is explained by the model. For physiological data, $R^2$ values around 0.7 are typically acceptable (Spiegelhalter, D., et al. (2004). "Bayesian Methods in Health Technology Assessment").
+
+```{r}
+library(caret)
+library(survival)
+
+#for reproducibility 
+set.seed(2304)
+
+#number of folds
+k <- 7
+
+#splitting into test/train sets
+folds <- createFolds(HeartData$ChangeRate, k = k, list = TRUE)
+
+#initializing vectors to store RMSE and R^2 values for each model
+rmse_model1_train <- numeric(k)
+rmse_model1_test <- numeric(k)
+rmse_model2_train <- numeric(k)
+rmse_model2_test <- numeric(k)
+
+rsq_model1 <- numeric(k)
+rsq_model2 <- numeric(k)
+
+#Looping over each fold
+for (i in 1:k){
+  #split into train and test sets
+  train_data <- HeartData[-folds[[i]], ]
+  test_data <- HeartData[folds[[i]], ]
+  
+  #model 1: using ExerciseType and InclineRate
+  model1 <- survreg(Surv(ChangeRate)~ExerciseType + InclineRate,
+                    data = train_data, 
+                    dist = "weibull")
+  
+  train_predictions1 <- predict(model1, newdata = train_data, type = "response")
+  rmse_model1_train[i] <- sqrt(mean((train_predictions1 - train_data$ChangeRate)^2))
+  
+  test_predictions1 <- predict(model1, newdata = test_data, type = "response")
+  rmse_model1_test[i] <- sqrt(mean((test_predictions1 - test_data$ChangeRate)^2))
+  
+  ss_res1 <- sum((test_predictions1 - test_data$ChangeRate)^2)
+  ss_tot1 <- sum((test_data$ChangeRate - mean(test_data$ChangeRate))^2)
+  rsq_model1[i] <- 1 - (ss_res1 / ss_tot1)
+  
+  #model 2: using ExerciseType, InclineRate, and their interaction
+  model2 <- survreg(Surv(ChangeRate)~ExerciseType+InclineRate 
+                    + ExerciseType*InclineRate,
+                    data = train_data, 
+                    dist = "weibull")
+  
+  train_predictions2 <- predict(model2, newdata = train_data, type = "response")
+  rmse_model2_train[i] <- sqrt(mean((train_predictions2 - train_data$ChangeRate)^2))
+  
+  test_predictions2 <- predict(model2, newdata = test_data, type = "response")
+  rmse_model2_test[i] <- sqrt(mean((test_predictions2 - test_data$ChangeRate)^2))
+  
+  ss_res2 <- sum((test_predictions2 - test_data$ChangeRate)^2)
+  ss_tot2 <- sum((test_data$ChangeRate - mean(test_data$ChangeRate))^2)
+  rsq_model2[i] <- 1 - (ss_res2 / ss_tot2)
+}
+
+cat("The mean training RMSE for model one is", mean(rmse_model1_train), "\n", 
+    "The mean testing RMSE for model one is", mean(rmse_model1_test), "\n") 
+
+cat("The mean training RMSE for model two is", mean(rmse_model2_train), "\n", 
+    "The mean testing RMSE for model two is", mean(rmse_model2_test), "\n") 
+    
+cat("The mean R^2 for model one is", mean(rsq_model1), "\n", 
+    "The mean R^2 for model two is", mean(rsq_model2), "\n")
+```
+
+```{r}
+summary(model1)
+summary(model2)
+```
+
+Both models' terms are all significant (p-value \< 0.05), which is good. Furthermore, the log-likelihood values and likelihood ratio tests (LRTs) for both models indicate the models are good fits- the model log likelihood values are larger than for the null model, and the p-values for the LRTs are both \< 0.05. Lastly, since the training and testing RMSE values for both models are very close, overfitting is not a concern.
+
+As model two has the larger (more significant) log-likelihood value, the smaller (more significant) p-value from the likelihood ratio test, the lower RMSE, and the higher $R^2$, I will select model 2 as the better model.
+
+Lastly, I will check the residual plots for both the training and test sets before deciding whether this model is acceptable.
+
+```{r}
+par(mfrow=c(2,1))
+
+train_residuals2 <- train_predictions2 - train_data$ChangeRate
+plot(train_predictions2, train_residuals2, main = "Residual Plot (Train Set)", pch = 19, col = "blue")
+abline(h = 0, col = "red")
+
+test_residuals2 <- test_predictions2 - test_data$ChangeRate
+plot(test_predictions2, test_residuals2, main = "Residual Plot (Test Set)", pch = 19, col = "blue")
+abline(h = 0, col = "red")
+```
+
+I don't see any reasons for concern, so this model looks good!
+
+The formula for a Weibull regression model is as follows: $$ln(T) = \beta_0 + \sum_{i = 1}^{p}\beta_iX_i + ln(\sigma)$$ where T is the outcome variable, $\beta_0$ is the intercept, $\beta_i$ are the coefficients for the predictors $X_i$, p is the number of predictors (including interaction terms), and $\sigma$ is the scale parameter of the Weibull distribution.
+
+For the model used to predict changes in heart rate, the formula is 
+
+\[
+\scriptsize{
+\text{ln(ChangeRate)} = 2.3695 - 0.7421(\text{ExerciseTypewalk}) + 0.6865(\text{InclineRateup}) + \\
+0.4139(\text{ExerciseTypewalk} \times \text{InclineRateup}) + \text{ln}(0.281)
+}
+\]
+
+
+To use this formula to predict changes in heart rate, you first need to exponentiate both sides of the equation, then plug in the appropriate values for each predictor. Each predictor can take on one of two values, 0 or 1. If the condition for the predictor is being met, the value will be 1, otherwise, it is zero. For example, if someone is walking, then ExerciseTypewalk equals 1, otherwise, it equals 0, and if someone is going up stairs, InclineRateup equals 1, otherwise, it equals 0. Once these values are plugged in, just simplify and solve.
+
+There are 4 possible values for ChangeRate, as there are 4 possible combinations of predictors:
+
+1.  Exercisetypewalk = 1, inclinerateup = 1 (someone walking up stairs)
+
+2.  Exercisetypewalk = 0, inclinerateup = 0 (someone running down stairs)
+
+3.  Exercisetypewalk = 1, inclinerateup = 0 (someone walking down stairs)
+
+4.  Exercisetypewalk = 0, inclinerateup = 1 (someone running up stairs)
+
+Finding the value of ChangeRate for each combination:
+
+```{r}
+#creating function for easy calculations
+predict_change_rate <- function(ExerciseTypewalk, InclineRateup){
+  
+  intercept <- 2.3695
+  beta_ExerciseTypewalk <- -0.7421
+  beta_InclineRateup <- 0.6865
+  beta_interaction <- 0.4139
+  scale <- 0.281
+  
+  ln_change_rate <- intercept + 
+    (beta_ExerciseTypewalk*ExerciseTypewalk) +
+    (beta_InclineRateup*InclineRateup) + 
+    (beta_interaction * ExerciseTypewalk * InclineRateup) +
+    log(scale)
+  
+  change_rate <- exp(ln_change_rate)
+  
+  return(change_rate)
+}
+
+#plugging in values
+one_one <- predict_change_rate(1,1) #walking up
+zero_zero <- predict_change_rate(0,0) #running down
+one_zero <- predict_change_rate(1,0) #walking down
+zero_one <- predict_change_rate(0,1) #running up
+
+cat("The expected change in heart rate for someone walking up stairs is", one_one, "BPM \n")
+cat("The expected change in heart rate for someone running down stairs is", zero_zero, "BPM \n")
+cat("The expected change in heart rate for someone walking down stairs is", one_zero, "BPM \n" )
+cat("The expected change in heart rate for someone running up stairs is", zero_one, "BPM \n")
+```
+
+Thus, the highest expected change in BPMs is observed when someone runs up stairs, followed by walking up stairs, then running down stairs, and finally, walking down stairs.
+
+The coefficients of the model also tell us a lot about changes in heart rate. For example, ExerciseTypewalk having a negative coefficient signals that heart rates are not expected to change as much for someone walking as for someone running. In other words, running tends to cause a greater increase in heart rate than walking does. Furthermore, InclineRateup has a positive coefficient, indicating that going up stairs leads to a larger change in heart rate compared to going down stairs. This suggests that going up stairs requires more energy than going down stairs. Lastly, the interaction effect has a positive coefficient, telling us that the combined effect of walking and going up stairs is greater than the individual effects of walking or going up stairs alone.
+
+## Conclusion
+
+Overall, this Weibull regression model has proven useful in predicting changes in heart rate based on incline rate and exercise type, however, several limitations must be considered when interpreting the results.
+
+First, the model is based on data from a single subject and a relatively small sample size of only 119 observations. While this allows for a detailed analysis of the subject's heart rate response, it is limited in its ability to generalize the findings to other people. Heart rate responses to exercise can vary greatly from person to person due to factors such as age, fitness level, and health conditions such as asthma. Therefore, caution is warranted when applying this model to broader populations.
+
+Additionally, it's possible the model does not account for other factors that influence heart rate changes, such as intensity of exercise (i.e, walking speed or running pace), environmental conditions such as temperature, how much sleep the subject has had, and so on. If future models were able to include even some of these factors, predictability could be greatly improved.
+
+As mentioned previously, the sample size of 119 also impacts the strength of the model, as it may be prone to overfitting. Thus, I recommend future studies include a larger and more diverse sample of subjects. This would increase the power of the model by accounting for variability between subjects and improve its predictive power.
+
+Despite these limitations, the model still provides valuable insights into the relationship between the exercise type (running or walking) movement direction (up or down), and changes in heart rate for this individual. The model's performance, with a stable RMSE and a solid $R^2$ value of 0.7, suggests that it can provide meaningful predictions within the scope of this analysis.
+
+In conclusion, while the model provides meaningful insights for this specific subject, it cannot be generalized to a broader population without more data. Future research should focus on collecting more data from diverse subjects and considering other relevant factors to enhance the model's predictive power and applicability.
