@@ -42,7 +42,7 @@ You can also view the interactive HTML version of the project here:
 https://kirstynloftus.github.io/Heart-Rate-Analysis/DoE_project.html
 
 ## Shiny App
-The interactive Shiny app allows users to explore heart rate changes by exercise type and incline rate. You can access it online or run it locally.
+The interactive Shiny app allows users to visually explore heart rate changes by exercise type and incline rate. You can access it online or run it locally.
 
 ### Online Access
 The Shiny app is available online at https://kirstynloftus.shinyapps.io/HeartRateAnalysisDashboard/
@@ -60,6 +60,57 @@ To run the app on your local machine:
    shiny::runApp("DoE_app/app.R")
    
 This will open the Shiny app in your web browser locally.
+
+## Web App
+The interactive web app allows users to explore heart rate changes by exercise type and incline rate. You can access it online.
+
+### Online Access
+The web app is available online at https://heart-rate-analysis-1.onrender.com/predict
+
+### Local Access
+To run the app locally, follow these steps:  
+#### Prerequisites 
+Make sure you have the following installed:  
+- Python (version 3.6 or higher)
+- pip (Python package manager)
+- venv (optional, but recommended for isolating dependencies)
+#### Steps to Run the App Locally  
+1. Clone the repository
+   - Start by cloning the repository to your local machine:
+     ```bash
+     git clone https://github.com/kirstynloftus/Heart-Rate-Analysis.git  
+2. Navigate to the app folder
+   - Change into the web_app folder (where the application files are located):
+     ```bash
+     cd Heart-Rate-Analysis/web_app
+3. Set up a virtual environment (optional, but recommended)
+   - Create and activate a virtual environment:
+     ```bash
+     python3 -m venv venv
+   - On macOS/Linux:
+     ```bash
+     source venv/bin/activate
+   - On Windows:
+     ```bash
+     venv\Scripts\activate
+4. Install the required dependencies
+   - Install all the necessary Python dependencies from requirements.txt:
+     ```bash
+     pip install -r requirements.txt 
+5. Run the app
+   - Start the Flask application by running model.py:
+     ```bash
+     python model.py
+   - This will start the Flask development server, and you should see output similar to this:
+     ```bash
+     * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+6. Access the app locally
+   - Open your browser and navigate to the URL provided in step 5. This will load the Heart Rate Prediction form where you can enter the exercise type and incline rate, then click Predict to see the result.
+ #### Troubleshooting  
+ - Invalid input: If the form inputs are invalid or missing, the app will display an error message and prompt you to select valid inputs.
+ - Environment issues: Ensure that you have the required Python version and dependencies installed. If you encounter issues with dependencies, make sure all the necessary packages are listed in requirements.txt and try reinstalling with pip install -r requirements.txt.
+ 
+
 
 ## Contributing
 Feel free to use the data provided for your own research questions or purposes. If you'd like to contribute to the analysis, you're welcome to add on to it, suggest improvements, or submit issues with feedback. When contributing, please make sure to follow these guidelines:
