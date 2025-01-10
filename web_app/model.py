@@ -43,8 +43,8 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        ExerciseTypewalk_str = request.form('ExerciseTypewalk')
-        InclineRateup_str = request.form('InclineRateup')
+        ExerciseTypewalk_str = request.form['ExerciseTypewalk']
+        InclineRateup_str = request.form['InclineRateup']
 
         ExerciseTypewalk = convert_to_binary(ExerciseTypewalk_str, 'ExerciseTypewalk')
         InclineRateup = convert_to_binary(InclineRateup_str, 'InclineRateup')
