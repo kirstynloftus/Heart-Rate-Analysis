@@ -65,7 +65,7 @@ This will open the Shiny app in your web browser locally.
 The interactive web app allows users to explore heart rate changes by exercise type and incline rate. You can access it online.
 
 ### Online Access
-The web app is available online at https://heart-rate-analysis-1.onrender.com/predict
+The web app is available online at https://heart-rate-analysis-1.onrender.com/
 
 ### Local Access
 To run the app locally, follow these steps:  
