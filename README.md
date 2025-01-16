@@ -2,7 +2,7 @@
 Analyzing the relationship between heart rate, incline rate, and exercise type
 
 ## Description
-This project analyzes the effect of exercise on heart rate by using statistical modeling techniques to evaluate changes in heart rate pre and post-exercise. The goal is to assess how various factors such as exercise type and incline rate influence heart rate changes. Key statistical methods, including hypothesis testing and model fitting, were used to understand these relationships.
+This project analyzes the effect of exercise on heart rate by using statistical modeling techniques to evaluate changes in heart rate pre and post-exercise. The goal is to assess how various factors such as exercise type and incline rate influence heart rate changes. Key statistical methods such as exploratory data analysis (EDA), hypothesis testing, and model fitting were used to understand these relationships.
 
 ## Dependencies
 ### To reproduce the analysis from the .Rmd file, the following R packages are required:
